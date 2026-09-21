@@ -9,7 +9,7 @@ export default defineConfig({
   build: {
     target: 'es2022',
     rollupOptions: {
-      input: { index: page('index'), polls: page('polls'), trends: page('trends'), answers: page('answers'), hello: page('hello') },
+      input: { index: page('index'), polls: page('polls'), trends: page('trends'), answers: page('answers'), pdg: page('pdg'), hello: page('hello') },
     },
   },
 });

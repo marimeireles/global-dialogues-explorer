@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deep consensus · Global Dialogues explorer</title>
+  <link rel="stylesheet" href="./src/theme.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Global Dialogues <span>raw-data explorer</span></div>
+    <nav>
+      <a href="polls.html">Polls</a>
+      <a href="trends.html">Trends</a>
+      <a href="answers.html">Answers</a>
+      <a class="active" href="pdg.html">Deep consensus</a>
+    </nav>
+    <button id="theme" class="ghost" type="button" aria-label="Switch between light and dark theme">◐</button>
+  </header>
+
+  <main class="page">
+    <section class="controls" aria-label="Controls">
+      <div class="field">
+        <span>Groups</span>
+        <div id="dims" class="seg" role="radiogroup" aria-label="Group dimension"></div>
+      </div>
+      <p class="note pdg-intro">A probabilistic dependency graph (Richardson 2024) of one claim: stance <b>S</b>, the Remesh theme of each person's written reason <b>R</b>, and a demographic group <b>G</b>. Every table is counted from the data and carries <b>β</b> = the number of people it came from. Inconsistency is the library's own measure, in bits × people: how far two groups' tables are from any single shared model. <b>Deep consensus</b> = same vote and indistinguishable reasons; <b>shallow</b> = same vote, different reasons.</p>
+    </section>
+
+    <div id="status" class="status" role="status">Loading…</div>
+
+    <div class="layout pdg-layout" hidden>
+      <div class="maincol">
+        <section class="card main">
+          <div class="q-head">
+            <div class="q-meta" id="q-meta"></div>
+            <h1 id="q-text"></h1>
+          </div>
+          <div id="graph" class="graph"></div>
+          <div class="legend" id="graph-legend"></div>
+          <p class="note">Arrow width = β (people the table came from). Arrow colour = that arc's share of the between-group inconsistency at the optimum, lightest = none. Hover anything for the data behind it; click to pin.</p>
+        </section>
+
+        <section class="card main">
+          <h2 id="readout-title"></h2>
+          <p class="note" id="readout-sub"></p>
+          <div id="readout"></div>
+          <div class="legend" id="readout-legend"></div>
+        </section>
+      </div>
+
+      <aside class="side pdg-side" aria-label="Inspector">
+        <div class="side-head">
+          <h2 id="inspector-title">Inspector</h2>
+          <button id="unpin" class="ghost" type="button" hidden>Unpin</button>
+        </div>
+        <div id="inspector" class="inspector panel"></div>
+      </aside>
+    </div>
+  </main>
+  <div id="tip" class="tip" hidden></div>
+  <script type="module" src="./src/pdg.js"></script>
+</body>
+</html>
