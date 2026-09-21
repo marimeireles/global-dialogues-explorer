@@ -342,6 +342,31 @@ def check_respondents(rnd, rdir, answers, questions, report):
     report["poll_respondent_mismatches"] = bad
 
 
+def attach_branches(rnd, rdir, questions, report):
+    """Link each `Branch X - ...` follow-up to the poll that routed people into it.
+
+    The parent is the nearest preceding poll; the answers that lead to the branch are only
+    written in the participants.csv header (`Branch A - <option>, <option> (%agree)`).
+    """
+    header = read_csv(rdir / f"{rnd}_participants.csv")[0]
+    routes = [m for m in (re.match(r"(Branch [A-Z]) - (.*) \(%agree\)$", clean(c)) for c in header) if m]
+    parent, found = None, []
+    for q in questions.values():
+        if q["question_type"].startswith("Poll"):
+            parent = q
+        m = re.match(r"(Branch [A-Z]) - ", q["question_text"])
+        if not m or parent is None:
+            continue
+        q["parent_question_id"], q["parent_question_text"] = parent["question_id"], parent["question_text"]
+        route = routes[len(found)] if len(found) < len(routes) else None
+        if route and route.group(1) == m.group(1):
+            q["branch_answers"] = route.group(2).strip()
+        found.append(q)
+    if found:
+        report["branch_questions"] = len(found)
+        report["branch_questions_without_route"] = sum("branch_answers" not in q for q in found)
+
+
 # -------------------------------------------------------------------------- statements
 
 def build_statements(rnd, rdir, questions, text_rows, report):
@@ -453,8 +478,12 @@ def build_round(rnd, data, regions, codesheet):
     check_respondents(rnd, rdir, answers, questions, report)
     statements, votes, pairwise = build_statements(rnd, rdir, questions, text_rows, report)
 
+    attach_branches(rnd, rdir, questions, report)
     for row in qrows:
-        row["demographic"] = questions[row["question_id"]].get("demographic")
+        q = questions[row["question_id"]]
+        row["demographic"] = q.get("demographic")
+        for k in ("parent_question_id", "parent_question_text", "branch_answers"):
+            row[k] = q.get(k)
     options = [{"round": rnd, "question_id": q["question_id"], "option": o, "option_order": i}
                for q in questions.values() if q["question_type"].startswith("Poll")
                for i, o in enumerate(q["options"], 1)]

@@ -28,6 +28,17 @@ export const DIMS = [
 ];
 export const DIM = Object.fromEntries(DIMS.map((d) => [d.key, d]));
 
+/**
+ * Context for a branched follow-up ("Branch A - Please explain…"): the poll that routed people
+ * into it and the answers that lead there. Null for ordinary questions.
+ */
+export function branchContext(q) {
+  if (!q?.parent_question_text) return null;
+  return el('p', { className: 'q-context' },
+    el('b', { textContent: 'Follow-up to: ' }), `“${q.parent_question_text}”`,
+    q.branch_answers ? [el('br'), el('b', { textContent: 'Asked only of people who answered: ' }), q.branch_answers] : null);
+}
+
 export function rowsOf(table) {
   return table.toArray().map((r) => {
     const o = {};

@@ -6,7 +6,7 @@
 // apart from them and labelled as an estimate.
 import { Selection, makeClient } from '@uwdata/mosaic-core';
 import { andFilter, initData, lit, sql } from './coordinator.js';
-import { $, DIM, DIMS, bindTheme, createCombo, createPanels, el, fmt, pct, readFilters, rowsOf, status, writeFilters } from './shared.js';
+import { $, DIM, DIMS, bindTheme, branchContext, createCombo, createPanels, el, fmt, pct, readFilters, rowsOf, status, writeFilters } from './shared.js';
 
 const PAGE = 40;
 const ANY = '';
@@ -86,7 +86,8 @@ async function start() {
 
 async function loadRound() {
   questions = await sql(`
-    SELECT q.round, q.round_order, q.question_id, q.question_text, q.question_type, q.section, q.order_in_survey, count(*) AS n
+    SELECT q.round, q.round_order, q.question_id, q.question_text, q.question_type, q.section, q.order_in_survey,
+           q.parent_question_text, q.branch_answers, count(*) AS n
     FROM questions q JOIN statements s USING (round, question_id)
     WHERE ${roundSql('q.round')} GROUP BY ALL ORDER BY q.round_order DESC, q.order_in_survey`);
   if (state.q && !questions.some((q) => q.question_id === state.q)) state.q = ANY;
@@ -140,6 +141,9 @@ function renderHead() {
     ? [q.round, q.section, q.question_type === 'Ask Opinion' ? 'Ask Opinion · peers voted on these answers' : 'Ask Experience · no peer voting'].filter(Boolean).join(' · ')
     : `${state.round === ALL_ROUNDS ? 'All rounds' : state.round} · all open-ended questions`;
   $('#q-text').textContent = q ? q.question_text : 'All open-ended answers';
+  $('.q-head .q-context')?.remove();
+  const context = branchContext(q);
+  if (context) $('#q-text').after(context);
   panels.renderChips();
   $('#chart-note').textContent = `${fmt(total)} answers from ${fmt(state.people ?? 0)} participants match. Vote bars count the votes actually cast (about five voters per statement on average); “Remesh estimate” is Remesh’s model-imputed agreement for the whole sample, not a count.`;
   $('#groups').replaceChildren(...(rows.length < total
@@ -174,9 +178,10 @@ function voteBar(r) {
 function answerCard(r, { context = !state.q, actions = true } = {}) {
   const hasOrig = r.text_orig && r.text_orig.trim() !== r.text_en.trim();
   const orig = hasOrig ? el('p', { className: 'orig', hidden: true, dir: 'auto' }, highlighted(r.text_orig)) : null;
-  const q = context ? questions.find((x) => x.question_id === r.question_id && x.round === r.round) : null;
+  // rows from the participant panel carry their own question columns
+  const q = context ? (r.parent_question_text !== undefined ? r : questions.find((x) => x.question_id === r.question_id && x.round === r.round)) : null;
   return el('article', { className: 'answer' },
-    context ? el('div', { className: 'ctx', textContent: `${r.round} · ${q?.question_text ?? r.question_text ?? ''}` }) : null,
+    context ? el('div', { className: 'ctx' }, `${r.round} · ${q?.question_text ?? r.question_text ?? ''}`, branchContext(q)) : null,
     el('p', {}, highlighted(r.text_en)), orig,
     el('div', { className: 'meta' },
       [r.country, r.age, r.gender, r.religion, r.sentiment].filter(Boolean).map((t) => el('span', { textContent: t })),
@@ -213,7 +218,7 @@ function renderList() {
 function openDrawer(title, sub, body) {
   $('#drawer-title').textContent = title;
   $('#drawer-sub').textContent = sub;
-  $('#drawer-body').replaceChildren(...body);
+  $('#drawer-body').replaceChildren(...body.filter(Boolean));
   $('#drawer-body').scrollTop = 0;
   $('#drawer').hidden = false;
 }
@@ -231,7 +236,7 @@ async function openPerson(round, pid) {
   const [who] = await sql(`SELECT ${DIMS.map((d) => d.key).join(', ')}, pri_score FROM participants WHERE ${me}`);
   if (!who) return;
   const texts = await sql(`
-    SELECT s.*, q.question_text FROM statements_x s JOIN questions q USING (round, question_id)
+    SELECT s.*, q.question_text, q.parent_question_text, q.branch_answers FROM statements_x s JOIN questions q USING (round, question_id)
     WHERE s.${me.replaceAll(' AND ', ' AND s.')} ORDER BY q.order_in_survey`);
   const polls = await sql(`
     SELECT q.question_text, string_agg(a.option, ' · ' ORDER BY a.option_order) AS answer
@@ -261,7 +266,7 @@ async function openPerson(round, pid) {
 /** Who voted on one statement, by segment, as raw counts. */
 async function openVotes(round, thoughtId) {
   state.thought = `${round}/${thoughtId}`; state.person = null; writeUrl();
-  const [s] = await sql(`SELECT s.*, q.question_text FROM statements_x s JOIN questions q USING (round, question_id) WHERE s.round = ${lit(round)} AND s.thought_id = ${lit(thoughtId)}`);
+  const [s] = await sql(`SELECT s.*, q.question_text, q.parent_question_text, q.branch_answers FROM statements_x s JOIN questions q USING (round, question_id) WHERE s.round = ${lit(round)} AND s.thought_id = ${lit(thoughtId)}`);
   if (!s) return;
   const d = DIM[state.vsplit];
   const data = await sql(`SELECT ${d.key} AS seg, vote, count(*) AS n FROM votes_x WHERE round = ${lit(round)} AND thought_id = ${lit(thoughtId)} GROUP BY ALL`);
@@ -279,6 +284,7 @@ async function openVotes(round, thoughtId) {
       el('div', { className: `${few ? 'small ' : ''}seg-n` }, `n = ${n}`, few ? el('span', { className: 'warn', textContent: ' · n < 5' }) : null)];
   };
   openDrawer('Votes on this statement', `${round} · ${s.question_text}`, [
+    branchContext(s),
     answerCard(s, { context: false, actions: false }),
     el('label', { className: 'field' }, el('span', { textContent: 'Voters split by' }), select),
     el('div', { className: 'legend' },

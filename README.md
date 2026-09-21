@@ -27,7 +27,13 @@ Node ≥ 20. Versions are pinned in `explorer/package.json` (Mosaic 0.31.0, Plot
   tag, sentiment, sort; raw vote counts as a bar, Remesh's imputed rate separately and labelled
   an estimate. "Participant" opens everything that person answered and how they voted;
   "Votes by group" shows raw agree / disagree / neutral counts by segment, greyed with a warning
-  under n = 5.
+  under n = 5. Branched follow-ups ("Branch A - …") show the poll they follow and the
+  answers that routed people into them.
+
+- **Deep consensus**: one claim as a probabilistic dependency graph (stance, reason theme,
+  group) with between-group inconsistency in bits, permutation nulls and a power check; labels
+  each group pair deep / shallow / underpowered per stance. Precomputed by
+  `tools/pdg/build_claim_pdg.py`; see `tools/pdg/README.md` for the numbers.
 
 Every page has the same demographic cross-filter column (Mosaic clients on one crossfilter
 `Selection`) and keeps its whole state in the URL.

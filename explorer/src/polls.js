@@ -6,7 +6,7 @@
 import { Selection, makeClient } from '@uwdata/mosaic-core';
 import { andFilter, initData, lit, sql } from './coordinator.js';
 import { isDark, optionColors } from './colors.js';
-import { $, DIM, DIMS, bindTheme, createCombo, createPanels, el, fmt, onLight, pct, readFilters, rowsOf, status, swatch, tooltip, writeFilters } from './shared.js';
+import { $, DIM, DIMS, bindTheme, branchContext, createCombo, createPanels, el, fmt, onLight, pct, readFilters, rowsOf, status, swatch, tooltip, writeFilters } from './shared.js';
 
 const ALL = '\u0000all';
 const TOP = 10; // groups shown before "Show all"; longer lists start collapsed
@@ -304,6 +304,7 @@ function bindControls() {
 // --------------------------------------------------------------------------- drawer
 
 let drawerPeople = '';
+let drawerQuestions = [];
 
 async function openDrawer(row, opt) {
   const d = state.split;
@@ -315,7 +316,8 @@ async function openDrawer(row, opt) {
     WHERE round = ${lit(state.round)} AND question_id = ${lit(state.q)}
       AND option IN (${opt.members.map(lit).join(', ')}) ${segCond}${mainFilterSql}`;
   const qs = await sql(`
-    SELECT s.question_id, any_value(q.question_text) AS question_text, count(*) AS n
+    SELECT s.question_id, any_value(q.question_text) AS question_text, any_value(q.parent_question_text) AS parent_question_text,
+           any_value(q.branch_answers) AS branch_answers, count(*) AS n
     FROM statements s JOIN questions q USING (round, question_id)
     WHERE s.round = ${lit(state.round)} AND s.participant_id IN (${drawerPeople})
     GROUP BY s.question_id ORDER BY any_value(q.order_in_survey)`);
@@ -323,6 +325,7 @@ async function openDrawer(row, opt) {
   $('#drawer-sub').textContent = `${DIM[d].label}: ${row.label} · ${question().question_text}`;
   const select = $('#drawer-question');
   select.replaceChildren(...qs.map((q) => el('option', { value: q.question_id, textContent: `${q.question_text} (${q.n})` })));
+  drawerQuestions = qs;
   select.onchange = () => loadAnswers(select.value);
   $('#drawer').hidden = false;
   $('#tip').hidden = true;
@@ -340,7 +343,8 @@ async function loadAnswers(questionId) {
     WHERE round = ${lit(state.round)} AND question_id = ${lit(questionId)} AND participant_id IN (${drawerPeople})
     ORDER BY n_agree + n_disagree DESC, length(text_en) DESC LIMIT ${LIMIT + 1}`);
   const list = $('#drawer-list');
-  list.replaceChildren(...rows.slice(0, LIMIT).map((r) => {
+  const context = branchContext(drawerQuestions.find((q) => q.question_id === questionId));
+  list.replaceChildren(...[context, ...rows.slice(0, LIMIT).map((r) => {
     const hasOrig = r.text_orig && r.text_orig.trim() !== r.text_en.trim();
     const orig = hasOrig ? el('p', { className: 'orig', lang: '', hidden: true, textContent: r.text_orig, dir: 'auto' }) : null;
     const votes = r.n_agree + r.n_disagree + r.n_neutral;
@@ -350,7 +354,7 @@ async function loadAnswers(questionId) {
         [r.country, r.age, r.gender, r.sentiment].filter(Boolean).map((t) => el('span', { textContent: t })),
         hasOrig ? el('button', { type: 'button', className: 'ghost', textContent: `Original (${r.text_language})`, onclick: () => { orig.hidden = !orig.hidden; } }) : null,
         r.thought_id ? el('span', { className: 'votes', textContent: votes ? `raw votes: ${r.n_agree} agree · ${r.n_disagree} disagree${r.n_neutral ? ` · ${r.n_neutral} neutral` : ''}` : 'no votes', title: 'Counts of votes actually cast (binary.csv), not Remesh estimates' }) : null));
-  }));
+  })].filter(Boolean));
   const p = new URLSearchParams({ round: state.round, q: questionId });
   writeFilters(p, state.filters);
   list.append(el('p', { className: 'note' }, rows.length > LIMIT ? `Showing the first ${LIMIT}. ` : '',
