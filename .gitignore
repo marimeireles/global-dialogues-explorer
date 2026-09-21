@@ -1,0 +1,5 @@
+.venv/
+node_modules/
+explorer/dist/
+# generated from the survey CSVs; rebuild with `make explorer-data`
+explorer/public/data/

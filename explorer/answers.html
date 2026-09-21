@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Answers · Global Dialogues explorer</title>
+  <link rel="stylesheet" href="./src/theme.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Global Dialogues <span>raw-data explorer</span></div>
+    <nav>
+      <a href="polls.html">Polls</a>
+      <a href="trends.html">Trends</a>
+      <a class="active" href="answers.html">Answers</a>
+    </nav>
+    <button id="theme" class="ghost" type="button" aria-label="Switch between light and dark theme">◐</button>
+  </header>
+
+  <main class="page">
+    <section class="controls" aria-label="Controls">
+      <label class="field">
+        <span>Round</span>
+        <select id="round"></select>
+      </label>
+      <div class="field grow">
+        <span>Open-ended question</span>
+        <div id="question-combo"></div>
+      </div>
+      <label class="field">
+        <span>Search text</span>
+        <input id="search" type="search" placeholder="word or phrase…" autocomplete="off">
+      </label>
+      <label class="field">
+        <span>Tag</span>
+        <select id="tag"></select>
+      </label>
+      <label class="field">
+        <span>Sentiment</span>
+        <select id="sentiment"></select>
+      </label>
+      <label class="field">
+        <span>Sort by</span>
+        <select id="sort"></select>
+      </label>
+    </section>
+
+    <div id="status" class="status" role="status">Loading…</div>
+
+    <div class="layout" hidden>
+      <section class="card main" aria-live="polite">
+        <div class="q-head">
+          <div class="q-meta" id="q-meta"></div>
+          <h1 id="q-text"></h1>
+          <div class="chips" id="active-filters"></div>
+        </div>
+        <div id="list" class="answers flat"></div>
+        <div id="groups" class="groups"></div>
+        <p class="note" id="chart-note"></p>
+      </section>
+
+      <aside class="side" aria-label="Filters">
+        <div class="side-head">
+          <h2>Filter participants</h2>
+          <button id="clear" class="ghost" type="button" hidden>Clear all</button>
+        </div>
+        <p class="note">Click bars to filter. Every chart, including the main one, updates; a panel is not filtered by its own selection.</p>
+        <div id="panels" class="panels"></div>
+      </aside>
+    </div>
+  </main>
+
+  <aside id="drawer" class="drawer" hidden aria-label="Details">
+    <div class="drawer-head">
+      <div>
+        <h2 id="drawer-title"></h2>
+        <p class="note" id="drawer-sub"></p>
+      </div>
+      <button id="drawer-close" class="ghost" type="button" aria-label="Close">✕</button>
+    </div>
+    <div id="drawer-body" class="answers"></div>
+  </aside>
+
+  <div id="tip" class="tip" hidden></div>
+  <script type="module" src="./src/answers.js"></script>
+</body>
+</html>

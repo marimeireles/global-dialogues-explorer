@@ -1,0 +1,21 @@
+{
+  "name": "gd-explorer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@observablehq/plot": "0.6.17",
+    "@uwdata/mosaic-core": "0.31.0",
+    "@uwdata/mosaic-inputs": "0.31.0",
+    "@uwdata/mosaic-sql": "0.31.0",
+    "@uwdata/vgplot": "0.31.0"
+  },
+  "devDependencies": {
+    "vite": "8.3.0"
+  }
+}

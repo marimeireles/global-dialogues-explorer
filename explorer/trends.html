@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trends · Global Dialogues explorer</title>
+  <link rel="stylesheet" href="./src/theme.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Global Dialogues <span>raw-data explorer</span></div>
+    <nav>
+      <a href="polls.html">Polls</a>
+      <a class="active" href="trends.html">Trends</a>
+      <a href="answers.html">Answers</a>
+    </nav>
+    <button id="theme" class="ghost" type="button" aria-label="Switch between light and dark theme">◐</button>
+  </header>
+
+  <main class="page">
+    <section class="controls" aria-label="Controls">
+      <div class="field grow">
+        <span>Indicator (recurring poll)</span>
+        <div id="indicator-combo"></div>
+      </div>
+      <label class="field">
+        <span>Split by</span>
+        <select id="split"></select>
+      </label>
+      <label class="field">
+        <span>Minimum n: <output id="minn-out"></output></span>
+        <input id="minn" type="range" min="0" max="200" step="5">
+      </label>
+      <label class="field check">
+        <input id="uk" type="checkbox">
+        <span>Show GD6UK</span>
+      </label>
+    </section>
+
+    <div id="status" class="status" role="status">Loading…</div>
+
+    <div class="layout" hidden>
+      <div class="maincol">
+      <section class="card main" aria-live="polite">
+        <div class="q-head">
+          <div class="q-meta" id="q-meta"></div>
+          <h1 id="q-text"></h1>
+          <div class="chips" id="active-filters"></div>
+        </div>
+        <fieldset class="headline">
+          <legend>Headline = share of respondents choosing</legend>
+          <div id="headline" class="groups"></div>
+        </fieldset>
+        <div id="panels-grid" class="trend-grid"></div>
+        <div id="groups" class="groups"></div>
+        <p class="note" id="chart-note"></p>
+      </section>
+
+      <section class="card main dist">
+        <h2 id="dist-title"></h2>
+        <div class="legend" id="legend"></div>
+        <div id="dist"></div>
+        <details class="table-view">
+          <summary>Question wording per round</summary>
+          <div id="wording"></div>
+        </details>
+      </section>
+      </div>
+
+      <aside class="side" aria-label="Filters">
+        <div class="side-head">
+          <h2>Filter participants</h2>
+          <button id="clear" class="ghost" type="button" hidden>Clear all</button>
+        </div>
+        <p class="note">Click bars to filter. Every chart, including the main one, updates; a panel is not filtered by its own selection.</p>
+        <div id="panels" class="panels"></div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="tip" class="tip" hidden></div>
+  <script type="module" src="./src/trends.js"></script>
+</body>
+</html>
