@@ -74,43 +74,4 @@ VITE_DUCKDB_SERVER=wss://host/gd-db VITE_DATA_DIR=/srv/gd-explorer/data npm run 
 `duckdb-server` executes any SQL it receives, so keep it behind the same access control as the
 site. Nothing in either mode is sent to a third party: DuckDB-WASM is bundled, not loaded from a CDN.
 
-## Where this departs from the plan, and why
 
-- **Lives in its own directory** instead of inside the `global-dialogues` repo; the data path is
-  a parameter. Generated parquet is gitignored. The repo had no `.venv`, so `make` creates one here.
-- **Question identity comes from `aggregate_standardized.csv`**, not `question_id_mapping.csv`.
-  The mapping file repeats a UUID for questions that share a text prefix (GD9 rows 16/17, 22–24,
-  43/45/47, 78/79) and has no Rank questions. Only identity, type, survey order and option order
-  are read from the aggregate; no rates except `agree_rate_imputed_all`. Option order is
-  cross-checked against the discussion guide (`option_order_differs_from_guide`: empty in all rounds).
-- **Extra table `poll_options`** so options nobody chose still exist and sort correctly;
-  `questions` also carries `is_onboarding` and `demographic`.
-- **Parquet is written to `explorer/public/data/`** (Vite's static dir) rather than `explorer/data/`.
-- **Views are hand-rendered Mosaic clients** (HTML bars; Observable Plot for the trend panels), not
-  vgplot marks: they need per-row n, below-minimum greying, show/hide, Wilson intervals from custom
-  SQL and click-through. vgplot itself is wired up and proven in `hello.html` for the later map.
-- **Answers pages through the list** ("show 40 more") instead of virtualising it.
-- **n on Trends is a strip under each panel**, a separate chart on its own scale, not a second axis.
-- `pairwise.parquet` is built but not loaded by any page yet. Rank questions are in `questions`
-  but have no answers table. The "Please enter your Prolific ID" free-text question is dropped from
-  `statements`; `sample_id` is never shown.
-
-## What the ETL found (all in `build_report.json`)
-
-- Participants, Ask-Opinion statements, votes and pairwise counts equal `Data/README.md` for all
-  ten rounds; respondents per poll equal Remesh's `segment_counts_by_question` for every poll.
-- Indicators matched by text: 39/39 in GD3, 38/39 in GD4, GD6, GD6UK, GD7, GD8, GD9 (the missing one,
-  `trust_personal_ai_chatbot_why_ot`, is an open-ended item worded differently after GD3) and
-  17/39 in GD5, which really did ask a reduced set. When a round asks the same wording twice
-  (GD5–GD7: a repeat later in the survey, or a second scale), only the first asking carries the
-  code (`indicator_repeats_ignored`).
-- Option wording drifts: "Neither Trust nor Distrust" in GD5, and `community_automation_impact`
-  changed "several people" to "a few people" from GD6. Trends matches options case-insensitively;
-  the second change shows up as two separate options.
-- **GD5 tags cannot be joined**: `GD5/tags/all_thought_labels.csv` uses participant and question
-  IDs that appear nowhere else in GD5 (a different export). GD1 tags cover 12 of 17 questions.
-  Those statements have empty tags.
-- GD6UK has one Ask-Opinion question present in `verbatim_map`/`binary` but absent from the
-  aggregate; it is kept, without original-language text or the Remesh estimate.
-- "Turkey" (GD1, GD2) is normalised to "Türkiye". 3 to 43 votes per round point at a Thought ID
-  missing from `verbatim_map` (`votes_orphan_thought`); they stay in `votes` and drop out of joins.
